@@ -13,16 +13,21 @@
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 #define MAX_DEVICES 4
 #define CS_PIN D8
+#define change_sw D2
 
 const int utcOffsetInSeconds = 19800;
-const String weekDays[7] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+const String weekDays[7] = {"Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"};
 const String months[12] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-String mins, hour;
+String mins, hour, time_show, weekDay, date_disp, show_2nd, show_3rd, last_year;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_SERVER, utcOffsetInSeconds);
 MD_Parola myDisplay = MD_Parola(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
 
+int count1 = 0;
+
+unsigned long long curr_time = 0, curr_time_Time = 0, curr_time_count = 0;
+char *time_char;
 // String convertTimeToDate(time_t epochTime);
 
 void setup()
@@ -33,6 +38,8 @@ void setup()
   myDisplay.setZone(0, 0, 3);
   myDisplay.displayZoneText(0, "Join..", PA_CENTER, 80, 800, PA_PRINT, PA_NO_EFFECT);
   myDisplay.displayAnimate();
+
+  pinMode(change_sw, INPUT);
 
   Serial.begin(115200);
   Serial.print("Starting.....");
@@ -54,37 +61,87 @@ void setup()
 void loop()
 {
   timeClient.update();
-  Serial.println(timeClient.getFormattedTime());
-  // Serial.println(timeClient.getEpochTime());
-  // Serial.println(timeClient.getDay());
-  time_t epochTime = timeClient.getEpochTime();
-  String weekDay = weekDays[timeClient.getDay()];
-  Serial.print("Week Day: ");
-  Serial.println(weekDay);
-  Serial.println(f_date(epochTime));
 
-  if (timeClient.getMinutes() < 10)
+  if (digitalRead(change_sw) == HIGH)
   {
-    mins = "0" + String(timeClient.getMinutes());
+    if (millis() - curr_time_count >= 300)
+    {
+      count1++;
+      if (count1 == 4)
+      {
+        count1 = 0;
+      }
+      curr_time_count = millis();
+      curr_time = millis();
+    }
   }
-  else if (timeClient.getMinutes() >= 10)
-  {
-    mins = String(timeClient.getMinutes());
-  }
-  if (timeClient.getHours() < 10)
-  {
-    hour = "0" + String(timeClient.getHours());
-  }
-  else if (timeClient.getHours() >= 10)
-  {
-    hour = String(timeClient.getHours());
-  }
-  String time = hour + ":" + mins;
-  const char *time_char = time.c_str();
 
-  myDisplay.setZone(0, 0, 3);
-  myDisplay.displayZoneText(0, time_char, PA_CENTER, 10, 1000, PA_PRINT, PA_NO_EFFECT);
-  myDisplay.displayAnimate();
+  if (millis() - curr_time_Time >= 500)
+  {
+    // Serial.println(timeClient.getFormattedTime());
+    time_t epochTime = timeClient.getEpochTime();
+    weekDay = weekDays[timeClient.getDay()];
+    Serial.print("Week Day: ");
+    Serial.println(weekDay);
+    date_disp = f_date(epochTime);
+    Serial.println(date_disp);
+    int len = date_disp.length();
+    last_year = date_disp.substring(len - 4);
+    // show_2nd = weekDay + "|" + last_year;
+    Serial.print("count1: ");
+    Serial.println(count1);
+    if (timeClient.getMinutes() < 10)
+    {
+      mins = "0" + String(timeClient.getMinutes());
+    }
+    else if (timeClient.getMinutes() >= 10)
+    {
+      mins = String(timeClient.getMinutes());
+    }
+    if (timeClient.getHours() < 10)
+    {
+      hour = "0" + String(timeClient.getHours());
+    }
+    else if (timeClient.getHours() >= 10)
+    {
+      hour = String(timeClient.getHours());
+    }
+    curr_time_Time = millis();
+    time_show = hour + ":" + mins;
+  }
 
-  delay(1000);
+  if(count1 > 0 && (millis() - curr_time >= 5000)){
+    count1 = 0;
+  }
+
+  if (count1 == 0)
+  {
+    myDisplay.setZone(0, 0, 3);
+    const char *time_char = time_show.c_str();
+    myDisplay.displayZoneText(0, time_char, PA_CENTER, 10, 1000, PA_PRINT, PA_NO_EFFECT);
+    myDisplay.displayAnimate();
+  }
+  else if (count1 == 1)
+  {
+    myDisplay.setZone(0, 0, 3);    
+    const char *weekDay_char = weekDay.c_str();
+    myDisplay.displayZoneText(0, weekDay_char, PA_CENTER, 10, 1000, PA_PRINT, PA_NO_EFFECT);
+    myDisplay.displayAnimate();
+  }
+  else if (count1 == 2)
+  {
+    myDisplay.setZone(0, 0, 3);
+    String temp = date_disp.substring(0,5);
+    const char *date_disp_char = temp.c_str();
+    myDisplay.displayZoneText(0, date_disp_char, PA_CENTER, 10, 1000, PA_PRINT, PA_NO_EFFECT);
+    myDisplay.displayAnimate();
+  }
+
+  else if (count1 == 3)
+  {
+    myDisplay.setZone(0, 0, 3);
+    const char *last_year_char = last_year.c_str();
+    myDisplay.displayZoneText(0, last_year_char, PA_CENTER, 10, 1000, PA_PRINT, PA_NO_EFFECT);
+    myDisplay.displayAnimate();
+  }
 }
