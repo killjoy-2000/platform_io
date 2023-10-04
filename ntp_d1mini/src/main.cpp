@@ -14,32 +14,33 @@
 #define MAX_DEVICES 4
 #define CS_PIN D8
 #define change_sw D2
+#define bright_sw D1
 
 const int utcOffsetInSeconds = 19800;
 const String weekDays[7] = {"Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"};
-const String months[12] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+// const String months[12] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 String mins, hour, time_show, weekDay, date_disp, show_2nd, show_3rd, last_year;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_SERVER, utcOffsetInSeconds);
 MD_Parola myDisplay = MD_Parola(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
 
-int count1 = 0;
+int count1 = 0, count_bright = 5;
 
-unsigned long long curr_time = 0, curr_time_Time = 0, curr_time_count = 0;
+unsigned long long curr_time = 0, curr_time_Time = 0, curr_time_count = 0, curr_time_bright = 0;
 char *time_char;
-// String convertTimeToDate(time_t epochTime);
 
 void setup()
 {
   myDisplay.begin(2);
-  myDisplay.setIntensity(5);
+  myDisplay.setIntensity(count_bright);
   myDisplay.displayClear();
   myDisplay.setZone(0, 0, 3);
-  myDisplay.displayZoneText(0, "Join..", PA_CENTER, 80, 800, PA_PRINT, PA_NO_EFFECT);
+  myDisplay.displayZoneText(0, "WiFi...", PA_CENTER, 80, 800, PA_PRINT, PA_NO_EFFECT);
   myDisplay.displayAnimate();
 
   pinMode(change_sw, INPUT);
+  pinMode(bright_sw, INPUT);
 
   Serial.begin(115200);
   Serial.print("Starting.....");
@@ -73,6 +74,21 @@ void loop()
       }
       curr_time_count = millis();
       curr_time = millis();
+    }
+  }
+
+  if (digitalRead(bright_sw) == HIGH)
+  {
+    if (millis() - curr_time_bright >= 300)
+    {
+      // int intency = myDisplay.getIntensity();
+      count_bright++;
+      if (count_bright == 16)
+      {
+        count_bright = 0;
+      }
+      myDisplay.setIntensity(count_bright);
+      curr_time_bright = millis();
     }
   }
 
@@ -110,7 +126,8 @@ void loop()
     time_show = hour + ":" + mins;
   }
 
-  if(count1 > 0 && (millis() - curr_time >= 5000)){
+  if (count1 > 0 && (millis() - curr_time >= 5000))
+  {
     count1 = 0;
   }
 
@@ -123,7 +140,7 @@ void loop()
   }
   else if (count1 == 1)
   {
-    myDisplay.setZone(0, 0, 3);    
+    myDisplay.setZone(0, 0, 3);
     const char *weekDay_char = weekDay.c_str();
     myDisplay.displayZoneText(0, weekDay_char, PA_CENTER, 10, 1000, PA_PRINT, PA_NO_EFFECT);
     myDisplay.displayAnimate();
@@ -131,7 +148,7 @@ void loop()
   else if (count1 == 2)
   {
     myDisplay.setZone(0, 0, 3);
-    String temp = date_disp.substring(0,5);
+    String temp = date_disp.substring(0, 5);
     const char *date_disp_char = temp.c_str();
     myDisplay.displayZoneText(0, date_disp_char, PA_CENTER, 10, 1000, PA_PRINT, PA_NO_EFFECT);
     myDisplay.displayAnimate();
