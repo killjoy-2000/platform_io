@@ -42,21 +42,13 @@ void setup()
   timeClient.begin();
 
   myDisplay.begin(2);
-
-  // Set the intensity (brightness) of the display (0-15)
-  // myDisplay.setZone(1, 3, 3);
   myDisplay.setIntensity(9);
-
-  // Clear the display
-  // myDisplay.displayClear();
-  // myDisplay.displayZoneText(0, "hello", PA_CENTER, 10, 1000, PA_SCROLL_UP, PA_NO_EFFECT);
 }
 
 void loop()
 {
   timeClient.update();
   Serial.println(timeClient.getFormattedTime());
-  // Serial.println("2nd line");
   Serial.println(timeClient.getEpochTime());
   Serial.println(timeClient.getDay());
   time_t epochTime = timeClient.getEpochTime();
