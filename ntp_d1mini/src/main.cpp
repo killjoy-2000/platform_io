@@ -7,8 +7,8 @@
 #include <SPI.h>
 #include <date.cpp>
 
-#define ssid "beast_2-4GHz"
-#define password "iamthebeast"
+#define ssid "route-69"
+#define password "Rick@2007"
 #define NTP_SERVER "pool.ntp.org"
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 #define MAX_DEVICES 4
